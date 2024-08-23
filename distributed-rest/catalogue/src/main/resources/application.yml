@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: 'Catalogue'
+
+  datasource:
+    hikari:
+      driver-class-name: 'io.opentelemetry.instrumentation.jdbc.OpenTelemetryDriver'
+      jdbc-url: 'jdbc:otel:h2:mem:demo-catalogue;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL'
+      username: 'demo'
+      password: 'Catalogue'
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+server:
+  port: 8081
+
+otel:
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
