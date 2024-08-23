@@ -11,7 +11,7 @@ public class CatalogueItemMessageHandler {
     private final CatalogueItemRepository repository;
 
     public CatalogueItemMessageHandler(final CatalogueItemRepository repository) {
-        this.repository = requireNonNull(repository, "Catalogue repository cannot be null");
+        this.repository = requireNonNull(repository, "Catalogue item repository cannot be null");
     }
 
     @RabbitListener(queues = "demo-queue")
