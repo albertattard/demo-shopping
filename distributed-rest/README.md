@@ -86,10 +86,10 @@ keys to the cart and catalogue item tables/databases, respectively.
 1. **Build all application**
 
    This builds both projects, runs the respective tests and then copies the fat
-   JAR files into the [`./demo` directory](./demo).
+   JAR files into the [`./.demo` directory](./.demo).
 
    ```shell
-   rm -rf './demo'
+   rm -rf './.demo'
    ../mvnw clean package
    ```
 
@@ -98,13 +98,13 @@ keys to the cart and catalogue item tables/databases, respectively.
    (_Optional_) Verify that the fat JAR files were all created and copied.
 
    ```shell
-   tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './demo'
+   tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './.demo'
    ```
 
    The fat JAR files from both projects
 
    ```
-   ./demo
+   ./.demo
    |-- demo-shopping-distributed-rest-cart-1.0.0.jar
    `-- demo-shopping-distributed-rest-catalogue-1.0.0.jar
 
@@ -126,7 +126,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
    ```shell
    # Start the application in the background
-   java -jar './demo/demo-shopping-distributed-rest-catalogue-1.0.0.jar' > './demo/output-catalogue.txt' 2>&1 &
+   java -jar './.demo/demo-shopping-distributed-rest-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &
 
    # Wait for the application to start
    while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8081/catalogue/item/1')" -ne '200' ]
@@ -140,7 +140,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
    ```shell
    # Start the application in the background
-   java -jar './demo/demo-shopping-distributed-rest-cart-1.0.0.jar' > './demo/output-cart.txt' 2>&1 &
+   java -jar './.demo/demo-shopping-distributed-rest-cart-1.0.0.jar' > './.demo/output-cart.txt' 2>&1 &
 
    # Wait for the application to start
    while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8082/cart/1')" -ne '200' ]
@@ -241,10 +241,10 @@ keys to the cart and catalogue item tables/databases, respectively.
         -H 'Content-Type: application/json' \
         -d '{"caption":"Green Plant","description":"Put a little life in your living room!!"}' \
         | jq \
-        > './demo/new-catalogue-item.json'
+        > './.demo/new-catalogue-item.json'
 
       # Print the output
-      jq . './demo/new-catalogue-item.json'
+      jq . './.demo/new-catalogue-item.json'
       ```
 
       This will return the newly added catalogue item together with its id.
@@ -261,7 +261,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
       ```shell
       # Print the new catalogue item id
-      ITEM_ID="$(jq .id './demo/new-catalogue-item.json')"
+      ITEM_ID="$(jq .id './.demo/new-catalogue-item.json')"
       echo "New catalogue item id: ${ITEM_ID}"
       ```
 
@@ -301,7 +301,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
       ```shell
       # Read the new item id obtained from the previous command
-      ITEM_ID="$(jq .id './demo/new-catalogue-item.json')"
+      ITEM_ID="$(jq .id './.demo/new-catalogue-item.json')"
 
       # Fetch the new catalogue item
       curl --silent "http://localhost:8081/catalogue/item/${ITEM_ID}" | jq
@@ -321,7 +321,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
       ```shell
       # Read the new item id obtained from the previous command
-      ITEM_ID="$(jq .id './demo/new-catalogue-item.json')"
+      ITEM_ID="$(jq .id './.demo/new-catalogue-item.json')"
 
       # Add the new item to cart with id 3
       curl --silent -X POST "http://localhost:8082/cart/3/item/${ITEM_ID}" | jq
@@ -365,4 +365,3 @@ keys to the cart and catalogue item tables/databases, respectively.
    ```shell
    docker stop 'shopping-jaeger-demo'
    ```
-

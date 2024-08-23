@@ -90,7 +90,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>../demo</outputDirectory>
+                            <outputDirectory>../.demo</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${project.build.directory}</directory>

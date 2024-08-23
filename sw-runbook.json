@@ -23,7 +23,7 @@
         "Please refer to each project for more information about the specific",
         "implementation.",
         "",
-        "All projects copy their artifacts into the `./demo` directory for convenience."
+        "All projects copy their artifacts into the `./.demo` directory for convenience."
       ]
     },
     {
@@ -94,13 +94,13 @@
         "1. **Build all applications**",
         "",
         "   This builds all projects, runs the respective tests and then copies the fat",
-        "   JAR files into the [`./demo` directory](./demo)."
+        "   JAR files into the [`./.demo` directory](./.demo)."
       ]
     },
     {
       "type": "Command",
       "commands": [
-        "rm -rf './demo'",
+        "rm -rf './.demo'",
         "./mvnw clean package"
       ],
       "indent": 3
@@ -116,7 +116,7 @@
     {
       "type": "Command",
       "commands": [
-        "tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './demo'"
+        "tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './.demo'"
       ],
       "output": {
         "caption": "The fat JAR files from all projects"

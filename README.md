@@ -16,7 +16,7 @@ This demo implements the same solution using different architecture styles:
 Please refer to each project for more information about the specific
 implementation.
 
-All projects copy their artifacts into the `./demo` directory for convenience.
+All projects copy their artifacts into the `./.demo` directory for convenience.
 
 ## Preloaded data
 
@@ -66,10 +66,10 @@ and catalogue item tables, respectively.
 1. **Build all applications**
 
    This builds all projects, runs the respective tests and then copies the fat
-   JAR files into the [`./demo` directory](./demo).
+   JAR files into the [`./.demo` directory](./.demo).
 
    ```shell
-   rm -rf './demo'
+   rm -rf './.demo'
    ./mvnw clean package
    ```
 
@@ -78,13 +78,13 @@ and catalogue item tables, respectively.
    (_Optional_) Verify that the fat JAR files were all created and copied.
 
    ```shell
-   tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './demo'
+   tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './.demo'
    ```
 
    The fat JAR files from all projects
 
    ```
-   ./demo
+   ./.demo
    |-- demo-shopping-distributed-rest-cart-1.0.0.jar
    |-- demo-shopping-distributed-rest-catalogue-1.0.0.jar
    |-- demo-shopping-monolithic-layered-1.0.0.jar
