@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>demo</groupId>
+    <artifactId>demo-shopping</artifactId>
+    <version>1.0.0</version>
+    <name>Shopping Demo</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
+        <required.maven.version>3.6.3</required.maven.version>
+    </properties>
+
+    <modules>
+        <!-- <module>distributed-kafka</module> -->
+        <!-- <module>distributed-messaging</module> -->
+        <!-- <module>distributed-rest</module> -->
+        <module>monolithic-layered</module>
+        <!-- <module>monolithic-modular</module> -->
+    </modules>
+
+    <build>
+        <defaultGoal>clean package</defaultGoal>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>${required.maven.version}</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
