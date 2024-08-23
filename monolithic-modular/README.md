@@ -321,4 +321,3 @@ and catalogue item tables, respectively.
    ```shell
    kill "$(jcmd | grep 'demo-shopping-monolithic-modular-1.0.0.jar' | cut -d' ' -f1)"
    ```
-
