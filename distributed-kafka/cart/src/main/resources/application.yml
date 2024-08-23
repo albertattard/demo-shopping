@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: 'Cart'
+
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: 'demo'
+    password: 'Shopping Demo 2024'
+
+  datasource:
+    hikari:
+      jdbc-url: 'jdbc:h2:mem:demo-cart;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL'
+      username: 'demo'
+      password: 'Cart'
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+  kafka:
+    bootstrap-servers: 'localhost:9092'
+    consumer:
+      group-id: 'demo'
+      enable-auto-commit: true
+      auto-offset-reset: 'earliest'
+      key-deserializer: 'org.apache.kafka.common.serialization.StringDeserializer'
+      value-deserializer: 'org.springframework.kafka.support.serializer.JsonDeserializer'
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: 'demo.catalogue'
+        spring.deserializer.key.delegate.class: 'org.apache.kafka.common.serialization.StringDeserializer'
+        spring.deserializer.value.delegate.class: 'org.springframework.kafka.support.serializer.JsonDeserializer'
+
+server:
+  port: 8082
