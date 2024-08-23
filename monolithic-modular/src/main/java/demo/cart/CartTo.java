@@ -7,11 +7,12 @@ import static java.util.Objects.requireNonNull;
 public record CartTo(Long id, List<CartItemTo> items) {
 
     public CartTo {
+        /* Defensive copy */
         items = List.copyOf(items);
     }
 
     public static CartTo of(final CartEntity entity) {
-        requireNonNull(entity);
+        requireNonNull(entity, "Entity cannot be null");
 
         final Long id = entity.id();
         final List<CartItemTo> items = entity.items().stream()
