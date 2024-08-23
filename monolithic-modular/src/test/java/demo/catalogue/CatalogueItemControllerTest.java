@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class CatalogueItemIT {
+class CatalogueItemControllerTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
