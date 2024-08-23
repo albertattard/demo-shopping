@@ -1,3 +1,8 @@
 /.idea
-/demo
 **/target
+
+# Temporary directories used to store all JAR files and store other temporary
+# files. The target directory cannot be used as the clean Maven command may
+# delete it after the JAR files are copied.
+/demo
+/distributed-rest/demo
