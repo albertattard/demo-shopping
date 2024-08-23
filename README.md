@@ -63,7 +63,99 @@ and catalogue item tables, respectively.
 
 ## Run the examples
 
-1. **Build all applications**
+1. **Start RabbitMq**
+
+   The `CatalogueItemMessageHandlerTest` test class require a running RabbitMq
+   instance.
+
+   > TODO: Use test containers or other means so that the tests do not depend on
+   > external resources to be available.
+
+   ```shell
+   # Start RabbitMq
+   docker run \
+     --rm \
+     --detach \
+     --publish 5672:5672 \
+     --publish 15672:15672 \
+     --env RABBITMQ_DEFAULT_USER='demo' \
+     --env RABBITMQ_DEFAULT_PASS='Shopping Demo 2024' \
+     --name 'shopping-rabbitmq-demo' \
+     'rabbitmq:management-alpine'
+
+   # Wait for RabbitMq to start
+   while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:15672')" -ne '200' ]
+   do
+     echo 'Waiting for RabbitMq to start'
+     sleep 1
+   done
+   ```
+
+   The _Catalogue_ component will be sending messages to RabbitMQ everytime a new
+   catalogue item is created. The _Cart_ component, on the other hand, will be
+   listening for messages from RabbitMQ. For this to work we need to have the
+   following items.
+
+   - An exchange: where the catalogue service will send messages.
+   - A queue: from where the cart service will read messages.
+   - Connect the exchange to the queue so that the messages sent by the catalogue
+    service find their way to the cart service.
+
+   There are various ways we can configure this. The simplest option is to
+   execute three commands. While this is the simplest way, it may not be the best
+   way. I prefer infrastructure as code over this and only chose this option to
+   keep things simple and focused on the demo’s goals and objectives.
+
+   Let’s create everything before we proceed.
+
+   ```shell
+   # Create the exchange where the messages will be sent
+   docker exec 'shopping-rabbitmq-demo' \
+     rabbitmqadmin --username='demo' --password='Shopping Demo 2024' declare exchange name='demo-exchange' type='topic'
+
+   # Create the queue from where the messages will be read
+   docker exec 'shopping-rabbitmq-demo' \
+     rabbitmqadmin --username='demo' --password='Shopping Demo 2024' declare queue name='demo-queue'
+
+   # Bind the exchange with the queue so that the messages sent by the catalogue service can be read by the cart service
+   docker exec 'shopping-rabbitmq-demo' \
+     rabbitmqadmin --username='demo' --password='Shopping Demo 2024' declare binding source='demo-exchange' destination='demo-queue' routing_key='demo.catalogue.new'
+   ```
+
+   Access the RabbitMQ admin page:
+   [http://localhost:15672](http://localhost:15672). We are using the following
+   credentials.
+
+   | Property      | Value                          |
+   | ------------- | ------------------------------ |
+   | Username      | `demo`                         |
+   | Password      | `Shopping Demo 2024`           |
+   | Exchange Name | `demo-exchange`                |
+   | Queue Name    | `demo-queue`                   |
+   | Routing Key   | `demo.catalogue.new`           |
+
+   Login to RabbitMD management UI
+
+   ![RabbitMQ Management UI](./assets/images/RabbitMQ%20Management%20UI.png)
+
+   If you navigate to the _Exchanges_ tab, you will see our new exchange
+   (`demo-exchange`)
+
+   ![RabbitMQ Management UI - Exchanges.png](./assets/images/RabbitMQ%20Management%20UI%20-%20Exchanges.png)
+
+   If you navigate to the _Queues and Streams_ tab, you will see our new queue
+   (`demo-queue`)
+
+   ![RabbitMQ Management UI - Queues and Streams.png](./assets/images/RabbitMQ%20Management%20UI%20-%20Queues%20and%20Streams.png)
+
+   In case of troubleshooting, you can log into the running RabbitMQ container
+   using the following command.
+
+   ```
+   docker exec --interactive --tty 'shopping-rabbitmq-demo' /bin/sh
+   ```
+
+2. **Build all applications**
 
    This builds all projects, runs the respective tests and then copies the fat
    JAR files into the [`./.demo` directory](./.demo).
@@ -85,15 +177,19 @@ and catalogue item tables, respectively.
 
    ```
    ./.demo
+   |-- demo-shopping-distributed-kafka-cart-1.0.0.jar
+   |-- demo-shopping-distributed-kafka-catalogue-1.0.0.jar
+   |-- demo-shopping-distributed-messaging-cart-1.0.0.jar
+   |-- demo-shopping-distributed-messaging-catalogue-1.0.0.jar
    |-- demo-shopping-distributed-rest-cart-1.0.0.jar
    |-- demo-shopping-distributed-rest-catalogue-1.0.0.jar
    |-- demo-shopping-monolithic-layered-1.0.0.jar
    `-- demo-shopping-monolithic-modular-1.0.0.jar
 
-   1 directory, 4 files
+   1 directory, 8 files
    ```
 
-2. **Run the applications**
+3. **Run the applications**
 
    There are four web applications, and these applications listens on the same
    ports, such as `8080`, `8081`, and `8082`. Change the default port to run
@@ -105,3 +201,10 @@ and catalogue item tables, respectively.
    - [Modular Monolithic](./monolithic-modular/README.md)
    - [Distributed REST (synchronous)](./distributed-rest/README.md)
    - [Distributed Messaging (asynchronous)](./distributed-messaging/README.md)
+   - [Distributed Kafka (asynchronous)](./distributed-kafka/README.md)
+
+4. **Stop RabbitMq Once Ready**
+
+   ```shell
+   docker stop 'shopping-rabbitmq-demo'
+   ```

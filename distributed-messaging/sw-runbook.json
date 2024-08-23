@@ -93,7 +93,10 @@
         "1. **Start RabbitMq**",
         "",
         "   The `CatalogueItemMessageHandlerTest` test class require a running RabbitMq",
-        "   instance."
+        "   instance.",
+        "",
+        "   > TODO: Use test containers or other means so that the tests do not depend on",
+        "   > external resources to be available."
       ]
     },
     {
