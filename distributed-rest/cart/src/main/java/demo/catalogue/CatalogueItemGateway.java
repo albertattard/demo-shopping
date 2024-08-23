@@ -1,4 +1,4 @@
-package demo.external.catalogue;
+package demo.catalogue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

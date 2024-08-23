@@ -1,4 +1,4 @@
-package demo.external.catalogue;
+package demo.catalogue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
@@ -21,7 +21,7 @@ class CatalogueItemMessageHandlerTest {
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
-    private CatalogueRepository repository;
+    private CatalogueItemRepository repository;
 
     @Test
     void saveTheNewCatalogueItemToDatabase() {

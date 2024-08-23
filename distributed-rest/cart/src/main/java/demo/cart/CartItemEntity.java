@@ -1,6 +1,6 @@
 package demo.cart;
 
-import demo.external.catalogue.CatalogueItemEntity;
+import demo.catalogue.CatalogueItemEntity;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 

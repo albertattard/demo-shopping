@@ -1,6 +1,6 @@
 package demo.cart;
 
-import demo.external.catalogue.CatalogueItemEntity;
+import demo.catalogue.CatalogueItemEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

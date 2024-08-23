@@ -1,4 +1,4 @@
-package demo.external.catalogue;
+package demo.catalogue;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -46,6 +46,6 @@ public class CatalogueItemEntity implements Serializable {
 
     @Override
     public String toString() {
-        return "CatalogueItemEntity[id=" + id + ", caption=" + caption + "]";
+        return "CatalogueItemEntity[id=%d, caption=%s]".formatted(id, caption);
     }
 }

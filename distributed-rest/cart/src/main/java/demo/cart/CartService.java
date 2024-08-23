@@ -1,7 +1,7 @@
 package demo.cart;
 
-import demo.external.catalogue.CatalogueItemEntity;
-import demo.external.catalogue.CatalogueItemGateway;
+import demo.catalogue.CatalogueItemEntity;
+import demo.catalogue.CatalogueItemGateway;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 

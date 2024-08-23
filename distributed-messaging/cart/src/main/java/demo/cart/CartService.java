@@ -1,7 +1,7 @@
 package demo.cart;
 
-import demo.external.catalogue.CatalogueItemEntity;
-import demo.external.catalogue.CatalogueRepository;
+import demo.catalogue.CatalogueItemEntity;
+import demo.catalogue.CatalogueItemRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +13,10 @@ import static java.util.Objects.requireNonNull;
 public class CartService {
 
     private final CartRepository cartRepository;
-    private final CatalogueRepository itemRepository;
+    private final CatalogueItemRepository itemRepository;
 
     public CartService(final CartRepository cartRepository,
-                       final CatalogueRepository itemRepository) {
+                       final CatalogueItemRepository itemRepository) {
         this.cartRepository = requireNonNull(cartRepository, "Cart repository cannot be null");
         this.itemRepository = requireNonNull(itemRepository, "Catalogue item repository cannot be null");
     }

@@ -1,3 +1,3 @@
-package demo.external.catalogue;
+package demo.catalogue;
 
 public record CatalogueItemEntity(long id, String caption) {}

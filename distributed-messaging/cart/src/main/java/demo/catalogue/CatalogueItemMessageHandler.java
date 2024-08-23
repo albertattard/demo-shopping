@@ -1,4 +1,4 @@
-package demo.external.catalogue;
+package demo.catalogue;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
@@ -8,9 +8,9 @@ import static java.util.Objects.requireNonNull;
 @Service
 public class CatalogueItemMessageHandler {
 
-    private final CatalogueRepository repository;
+    private final CatalogueItemRepository repository;
 
-    public CatalogueItemMessageHandler(final CatalogueRepository repository) {
+    public CatalogueItemMessageHandler(final CatalogueItemRepository repository) {
         this.repository = requireNonNull(repository, "Catalogue repository cannot be null");
     }
 

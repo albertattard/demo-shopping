@@ -1,6 +1,6 @@
 package demo.cart;
 
-import demo.external.catalogue.CatalogueItemEntity;
+import demo.catalogue.CatalogueItemEntity;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package demo.external.catalogue;
+package demo.catalogue;
 
 public record CatalogueItemTo(long id, String caption) {
 
