@@ -3,7 +3,7 @@
     {
       "type": "Heading",
       "level": "H1",
-      "title": "Shopping Distributed Spring Boot Demo using REST Synchronous communication"
+      "title": "Shopping Distributed Spring Boot Demo using Messaging Asynchronous communication"
     },
     {
       "type": "Markdown",
@@ -15,13 +15,13 @@
         "- Cart (shopping cart)",
         "",
         "The _Cart_ component depends on information available in the _Catalogue_",
-        "component, such as the catalogue item’s _id_ and, _caption_. The components are",
-        "connected through a synchronous REST API. The _Cart_ component depends on the",
-        "_Catalogue_, and it cannot run independently. Both components are required for",
-        "the _Cart_ component to function as expected.",
+        "component, such as the _CatalogueItem_, _id_ and, _caption_. The components are",
+        "connected through a messaging queue. While the _Cart_ component depends on the",
+        "_Catalogue_, the applications can run independently and only the queue needs to",
+        "be present.",
         "",
-        "This distributed application gives up _partition tolerance_ and _availability_",
-        "in favour of _consistency_. Other tradeoffs are also valid, but not explored",
+        "This distributed application gives up _consistency_ in favour of _availability_",
+        "and _partition tolerance_. Other tradeoffs are also valid, but not explored",
         "here."
       ]
     },
@@ -79,35 +79,113 @@
       "contents": [
         "- [Oracle Java 21](https://www.oracle.com/java/technologies/downloads/#java21)",
         "- Container runtime, such as [Colima](https://github.com/abiosoft/colima)",
-        "- [Jaeger](https://www.jaegertracing.io/), that can be started using docker"
+        "- [RabbitMq](https://www.rabbitmq.com/), that can be started using docker"
       ]
     },
     {
       "type": "Command",
       "commands": [
-        "# Start Jaeger",
+        "# Start RabbitMq",
         "docker run \\",
         "  --rm \\",
         "  --detach \\",
-        "  --publish 4317:4317 \\",
-        "  --publish 4318:4318 \\",
-        "  --publish 9411:9411 \\",
-        "  --publish 16686:16686 \\",
-        "  --env COLLECTOR_ZIPKIN_HOST_PORT=:9411 \\",
-        "  --name 'shopping-jaeger-demo' \\",
-        "  'jaegertracing/all-in-one:1.60.0'",
+        "  --publish 5672:5672 \\",
+        "  --publish 15672:15672 \\",
+        "  --env RABBITMQ_DEFAULT_USER='demo' \\",
+        "  --env RABBITMQ_DEFAULT_PASS='Shopping Demo 2024' \\",
+        "  --name 'shopping-mq-demo' \\",
+        "  'rabbitmq:management-alpine'",
         "",
-        "# Wait for Jaeger to start",
-        "while [ \"$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:16686/search')\" -ne '200' ]",
+        "# Wait for RabbitMq to start",
+        "while [ \"$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:15672')\" -ne '200' ]",
         "do",
-        "  echo 'Waiting for Jaeger to start'",
+        "  echo 'Waiting for RabbitMq to start'",
         "  sleep 1",
         "done"
       ],
       "on_failure_commands": [
-        "docker stop 'shopping-jaeger-demo'"
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 2
+    },
+    {
+      "type": "Markdown",
+      "id": "d58efc54-051c-40e9-86bd-e78dd2aefb95",
+      "contents": [
+        "  The _Catalogue_ component will be sending messages to RabbitMQ everytime a new",
+        "  catalogue item is created. The cart service, on the other hand, will be",
+        "  listening for messages from RabbitMQ. For this to work we need to have the",
+        "  following items.",
+        "",
+        "  - An exchange: where the catalogue service will send messages.",
+        "  - A queue: from where the cart service will read messages.",
+        "  - Connect the exchange to the queue so that the messages sent by the catalogue",
+        "    service find their way to the cart service.",
+        "",
+        "  There are various ways we can configure this. The simplest option is to",
+        "  execute three commands. While this is the simplest way, it may not be the best",
+        "  way. I prefer infrastructure as code over this and only chose this option to",
+        "  keep things simple and focused on the demo’s goals and objectives.",
+        "",
+        "  Let’s create everything before we proceed."
+      ]
+    },
+    {
+      "type": "Command",
+      "commands": [
+        "# Create the exchange where the messages will be sent",
+        "docker exec 'shopping-mq-demo' \\",
+        "  rabbitmqadmin --username='demo' --password='Shopping Demo 2024' declare exchange name='demo-exchange' type='topic'",
+        "",
+        "# Create the queue from where the messages will be read",
+        "docker exec 'shopping-mq-demo' \\",
+        "  rabbitmqadmin --username='demo' --password='Shopping Demo 2024' declare queue name='demo-queue'",
+        "",
+        "# Bind the exchange with the queue so that the messages sent by the catalogue service can be read by the cart service",
+        "docker exec 'shopping-mq-demo' \\",
+        "  rabbitmqadmin --username='demo' --password='Shopping Demo 2024' declare binding source='demo-exchange' destination='demo-queue' routing_key='demo.catalogue.new'"
+      ],
+      "on_failure_commands": [
+        "docker stop 'shopping-mq-demo'"
+      ],
+      "indent": 2
+    },
+    {
+      "type": "Markdown",
+      "contents": [
+        "  Access the RabbitMQ admin page:",
+        "  [http://localhost:15672](http://localhost:15672). We are using the following",
+        "  credentials.",
+        "",
+        "  | Property      | Value                          |",
+        "  | ------------- | ------------------------------ |",
+        "  | Username      | `demo`                         |",
+        "  | Password      | `Shopping Demo 2024`           |",
+        "  | Exchange Name | `demo-exchange`                |",
+        "  | Queue Name    | `demo-queue`                   |",
+        "  | Routing Key   | `demo.catalogue.new`           |",
+        "",
+        "  Login to RabbitMD management UI",
+        "",
+        "  ![RabbitMQ Management UI](./assets/images/RabbitMQ%20Management%20UI.png)",
+        "",
+        "  If you navigate to the _Exchanges_ tab, you will see our new exchange",
+        "  (`demo-exchange`)",
+        "",
+        "  ![RabbitMQ Management UI - Exchanges.png](./assets/images/RabbitMQ%20Management%20UI%20-%20Exchanges.png)",
+        "",
+        "  If you navigate to the _Queues and Streams_ tab, you will see our new queue",
+        "  (`demo-queue`)",
+        "",
+        "  ![RabbitMQ Management UI - Queues and Streams.png](./assets/images/RabbitMQ%20Management%20UI%20-%20Queues%20and%20Streams.png)",
+        "",
+        "  In case of troubleshooting, you can log into the running RabbitMQ container",
+        "  using the following command.",
+        "",
+        "  ```",
+        "  docker exec --interactive --tty 'shopping-mq-demo' /bin/sh",
+        "  ```"
+      ]
     },
     {
       "type": "Heading",
@@ -128,6 +206,9 @@
       "commands": [
         "rm -rf './.demo'",
         "../mvnw clean package"
+      ],
+      "on_failure_commands": [
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 3
     },
@@ -154,11 +235,10 @@
       "contents": [
         "2. **Run the application**",
         "",
-        "   The _Cart_ component depends on the _Catalogue_, thus it is recommended to",
-        "   start the _Catalogue_ component first and then start the _Cart_ component.",
-        "   While the _Cart_ component starts without the _Catalogue_ component, it will",
-        "   fail once a request is made as it depends on the _Catalogue_ component to be",
-        "   up and running.",
+        "   The _Cart_ component depends on the events triggered _Catalogue_ component",
+        "   but not on the component itself. Both the _Cart_ and the _Catalogue_",
+        "   components depend on the message queue and given that this is running, each",
+        "   component can be started independent of the other.",
         "",
         "   The components are started in the background for convenience, and can be",
         "   started in different terminal sessions if preferred.",
@@ -170,7 +250,7 @@
       "type": "Command",
       "commands": [
         "# Start the application in the background",
-        "java -jar './.demo/demo-shopping-distributed-rest-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &",
+        "java -jar './.demo/demo-shopping-distributed-messaging-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &",
         "",
         "# Wait for the application to start",
         "while [ \"$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8081/catalogue/item/1')\" -ne '200' ]",
@@ -180,7 +260,8 @@
         "done"
       ],
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 3
     },
@@ -194,7 +275,7 @@
       "type": "Command",
       "commands": [
         "# Start the application in the background",
-        "java -jar './.demo/demo-shopping-distributed-rest-cart-1.0.0.jar' > './.demo/output-cart.txt' 2>&1 &",
+        "java -jar './.demo/demo-shopping-distributed-messaging-cart-1.0.0.jar' > './.demo/output-cart.txt' 2>&1 &",
         "",
         "# Wait for the application to start",
         "while [ \"$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8082/cart/1')\" -ne '200' ]",
@@ -204,17 +285,16 @@
         "done"
       ],
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 3
     },
     {
       "type": "Markdown",
       "contents": [
-        "   Note that both components are running on different ports. Also, the _Cart_",
-        "   component is expecting the _Catalogue_ component to be listening on part",
-        "   `8081`.",
+        "   Note that both components are running on different ports.",
         "",
         "   | Component   |   Port |",
         "   | ----------- | -----: |",
@@ -251,8 +331,9 @@
         "content_type": "json"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -283,8 +364,9 @@
         "content_type": "json"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -320,8 +402,9 @@
         "content_type": "json"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -342,8 +425,9 @@
         "caption": "The newly created catalogue item id"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -367,8 +451,9 @@
         "content_type": "json"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -393,8 +478,9 @@
         "content_type": "json"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -418,8 +504,9 @@
         "content_type": "json"
       },
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 6
     },
@@ -436,12 +523,13 @@
     {
       "type": "Command",
       "commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
       ],
       "on_failure_commands": [
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-cart-1.0.0.jar' | cut -d' ' -f1)\"",
-        "kill \"$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)\""
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-cart-1.0.0.jar' | cut -d' ' -f1)\"",
+        "kill \"$(jcmd | grep 'demo-shopping-distributed-messaging-catalogue-1.0.0.jar' | cut -d' ' -f1)\"",
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 3
     },
@@ -453,16 +541,16 @@
     {
       "type": "Markdown",
       "contents": [
-        "1. **Stop Jaeger Once Ready**"
+        "1. **Stop RabbitMq Once Ready**"
       ]
     },
     {
       "type": "Command",
       "commands": [
-        "docker stop 'shopping-jaeger-demo'"
+        "docker stop 'shopping-mq-demo'"
       ],
       "on_failure_commands": [
-        "docker stop 'shopping-jaeger-demo'"
+        "docker stop 'shopping-mq-demo'"
       ],
       "indent": 3
     }

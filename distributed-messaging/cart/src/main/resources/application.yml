@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: 'Cart'
+
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: 'demo'
+    password: 'Shopping Demo 2024'
+
+  datasource:
+    hikari:
+      jdbc-url: 'jdbc:h2:mem:demo-cart;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL'
+      username: 'demo'
+      password: 'Cart'
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+server:
+  port: 8082
