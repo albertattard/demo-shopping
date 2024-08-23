@@ -56,7 +56,6 @@ public class CartItemEntityPrimaryKey implements Serializable {
 
     @Override
     public String toString() {
-        return "CartItemEntityPrimaryKey[cartId=%s, itemId=%s]"
-                .formatted(cartId(), itemId());
+        return "CartItemEntityPrimaryKey[cartId=%d, itemId=%d]".formatted(cartId(), itemId());
     }
 }
