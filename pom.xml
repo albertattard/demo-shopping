@@ -21,7 +21,7 @@
         <!-- <module>distributed-messaging</module> -->
         <!-- <module>distributed-rest</module> -->
         <module>monolithic-layered</module>
-        <!-- <module>monolithic-modular</module> -->
+        <module>monolithic-modular</module>
     </modules>
 
     <build>
