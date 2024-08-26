@@ -19,6 +19,7 @@
         "- [Distributed REST (synchronous)](./distributed-rest/README.md)",
         "- [Distributed Messaging (asynchronous)](./distributed-messaging/README.md)",
         "- [Distributed Kafka (asynchronous)](./distributed-kafka/README.md)",
+        "- [Distributed Camel](./distributed-camel/README.md)",
         "",
         "Please refer to each project for more information about the specific",
         "implementation.",
@@ -254,7 +255,8 @@
         "   - [Modular Monolithic](./monolithic-modular/README.md)",
         "   - [Distributed REST (synchronous)](./distributed-rest/README.md)",
         "   - [Distributed Messaging (asynchronous)](./distributed-messaging/README.md)",
-        "   - [Distributed Kafka (asynchronous)](./distributed-kafka/README.md)"
+        "   - [Distributed Kafka (asynchronous)](./distributed-kafka/README.md)",
+        "   - [Distributed Camel](./distributed-camel/README.md)"
       ]
     },
     {

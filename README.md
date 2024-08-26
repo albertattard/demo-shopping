@@ -12,6 +12,7 @@ This demo implements the same solution using different architecture styles:
 - [Distributed REST (synchronous)](./distributed-rest/README.md)
 - [Distributed Messaging (asynchronous)](./distributed-messaging/README.md)
 - [Distributed Kafka (asynchronous)](./distributed-kafka/README.md)
+- [Distributed Camel](./distributed-camel/README.md)
 
 Please refer to each project for more information about the specific
 implementation.
@@ -177,6 +178,8 @@ and catalogue item tables, respectively.
 
    ```
    ./.demo
+   |-- demo-shopping-distributed-camel-cart-1.0.0.jar
+   |-- demo-shopping-distributed-camel-catalogue-1.0.0.jar
    |-- demo-shopping-distributed-kafka-cart-1.0.0.jar
    |-- demo-shopping-distributed-kafka-catalogue-1.0.0.jar
    |-- demo-shopping-distributed-messaging-cart-1.0.0.jar
@@ -186,7 +189,7 @@ and catalogue item tables, respectively.
    |-- demo-shopping-monolithic-layered-1.0.0.jar
    `-- demo-shopping-monolithic-modular-1.0.0.jar
 
-   1 directory, 8 files
+   1 directory, 10 files
    ```
 
 3. **Run the applications**
@@ -202,6 +205,7 @@ and catalogue item tables, respectively.
    - [Distributed REST (synchronous)](./distributed-rest/README.md)
    - [Distributed Messaging (asynchronous)](./distributed-messaging/README.md)
    - [Distributed Kafka (asynchronous)](./distributed-kafka/README.md)
+   - [Distributed Camel](./distributed-camel/README.md)
 
 4. **Stop RabbitMq Once Ready**
 
