@@ -18,11 +18,11 @@ public class CamelConfiguration extends RouteBuilder {
         from("""
                 jpa:demo.catalogue.CatalogueItemEntity?
                 namedQuery=new-catalogue-item&consumeDelete=false""")
-                .routeId("process-new-catalogue-item")
+                .bean(CatalogueItemTo.class, "of(${body})")
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
                 .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
                 .marshal().json(JsonLibrary.Jackson)
                 .to(cartRootUri.concat("/catalogue/item"))
-                .log("Processed new catalogue item");
+                .log("New catalogue item processed by cart: ${body}");
     }
 }

@@ -10,9 +10,10 @@ separate Java application.
 The _Cart_ component depends on information available in the _Catalogue_
 component, such as the _CatalogueItem_, _id_ and, _caption_. The components are
 connected through REST, where the _Catalogue_ component will make a POST request
-to the _Cart_ component everytime a new catalogue item is added. While the
-_Catalogue_ component depends on the _Cart_ component (as it is the component
-that initiates the request), the applications can run independently.
+to the _Cart_ component everytime a new catalogue item is added. The _Catalogue_
+component depends on the _Cart_ component (as it is the component that initiates
+the request), and will fail if the _Cart_ component is not reachable when a new
+catalogue item is added.
 
 This distributed application gives up _partition tolerance_ and _availability_
 in favour of _consistency_. Other tradeoffs are also valid, but not explored
@@ -91,27 +92,11 @@ keys to the cart and catalogue item tables/databases, respectively.
 
 2. **Run the application**
 
-   The _Cart_ component depends on the events triggered _Catalogue_ component
-   but not on the component itself. Both the _Cart_ and the _Catalogue_
-   components depend on Kafka and given that this is running, each component can
-   be started independent of the other.
+   The _Cart_ component should be started before the _Catalogue_ component as
+   the latter will need to make REST requests to the _Cart_ component.
 
    The components are started in the background for convenience, and can be
    started in different terminal sessions if preferred.
-
-   Run the _Catalogue_ component (in the background).
-
-   ```shell
-   # Start the application in the background
-   java -jar './.demo/demo-shopping-distributed-camel-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &
-
-   # Wait for the application to start
-   while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8081/catalogue/item/1')" -ne '200' ]
-   do
-     echo 'Waiting for the Catalogue component to start'
-     sleep 1
-   done
-   ```
 
    Run the _Cart_ component (in the background).
 
@@ -123,6 +108,20 @@ keys to the cart and catalogue item tables/databases, respectively.
    while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8082/cart/1')" -ne '200' ]
    do
      echo 'Waiting for the Cart component to start'
+     sleep 1
+   done
+   ```
+
+   Run the _Catalogue_ component (in the background).
+
+   ```shell
+   # Start the application in the background
+   java -jar './.demo/demo-shopping-distributed-camel-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &
+
+   # Wait for the application to start
+   while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8081/catalogue/item/1')" -ne '200' ]
+   do
+     echo 'Waiting for the Catalogue component to start'
      sleep 1
    done
    ```
@@ -306,12 +305,33 @@ keys to the cart and catalogue item tables/databases, respectively.
       curl --silent -X POST "http://localhost:8082/cart/3/item/${ITEM_ID}" | jq
       ```
 
+      The cart contents after adding the newly created catalogue item.
+
+      ```json
+      {
+        "id": 3,
+        "items": [
+          {
+            "id": 4,
+            "caption": "Mug",
+            "quantity": 4
+          },
+          {
+            "id": 6,
+            "caption": "Green Plant",
+            "quantity": 1
+          }
+        ]
+      }
+      ```
+
 4. **Stop the application once ready**
 
-   The order in which the _Cart_ and the _Catalogue_ components are stopped does
-   not make a difference.
+   Stop both the _Cart_ and the _Catalogue_ components in the reverse order in
+   which these were started. Like that the _Catalogue_ component does not fail as
+   the _Cart_ component is not up and running.
 
    ```shell
-   kill "$(jcmd | grep 'demo-shopping-distributed-camel-cart-1.0.0.jar' | cut -d' ' -f1)"
    kill "$(jcmd | grep 'demo-shopping-distributed-camel-catalogue-1.0.0.jar' | cut -d' ' -f1)"
+   kill "$(jcmd | grep 'demo-shopping-distributed-camel-cart-1.0.0.jar' | cut -d' ' -f1)"
    ```
