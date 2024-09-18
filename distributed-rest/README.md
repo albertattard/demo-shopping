@@ -17,6 +17,159 @@ This distributed application gives up _partition tolerance_ and _availability_
 in favour of _consistency_. Other tradeoffs are also valid, but not explored
 here.
 
+## Observability
+
+One of the main challenges of any distributed system is observability. This
+example also covers this topic through
+[OpenTelemetry](https://opentelemetry.io/). Traces, Metrics, and Logs are
+captured from all applications and collected into one place, the OpenTelemetry
+Collector. We can use various tools to observe some or all the data, such as
+
+| Category | Name                                          | URL                                               |
+| -------- | --------------------------------------------- | ------------------------------------------------  |
+| Traces   | [Jaeger](https://www.jaegertracing.io/)       | [http://localhost:16686](http://localhost:16686)  |
+| Traces   | [Zipkin](https://zipkin.io/)                  | [http://localhost:9411](http://localhost:9411)    |
+| Metrics  | [Prometheus](https://prometheus.io/)          | [http://localhost:9090](http://localhost:9090)    |
+| Logs     | [Grafana Loki](https://grafana.com/oss/loki/) | Cannot access this directly. Use Grafana instead. |
+| All      | [Grafana](https://grafana.com/)               | [http://localhost:3000](http://localhost:3000)    |
+
+The following image shows how these components are connected together.
+
+![OpenTelemetry Architecture](./assets/images/OpenTelemetry%20Architecture.png)
+
+To simplify the setup, all these components are defined as services within a
+`docker-compose.yml` file.
+
+```yml
+services:
+  otel-collector:
+    container_name: "shopping-collector-demo"
+    image: "otel/opentelemetry-collector-contrib:0.109.0"
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - "./opentelemetry-collector-contrib/config.yaml:/etc/otel-collector-config.yaml"
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "13133:13133" # health_check extension
+      - "55679:55679" # zpages extension
+    depends_on:
+      - jaeger
+      - zipkin
+      - prometheus
+      - loki
+    networks:
+      - otel-network
+
+  jaeger:
+    container_name: "shopping-jaeger-demo"
+    image: "jaegertracing/all-in-one:1.60.0"
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "14268"
+      - "14250"         # Jaeger HTTP collector port (internal)
+      - "4317"          # Jaeger OTLP/gRPC collector port (internal)
+    networks:
+      - otel-network
+
+  zipkin:
+    container_name: "shopping-zipkin-demo"
+    image: "openzipkin/zipkin:3.4.1"
+    environment:
+      - JAVA_OPTS=-Xms1024m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+    ports:
+      - "9411:9411"    # Zipkin UI and collector
+    networks:
+      - otel-network
+
+  prometheus:
+    container_name: "shopping-prometheus-demo"
+    image: "prom/prometheus:v2.54.1"
+    volumes:
+      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"    # Prometheus UI
+    networks:
+      - otel-network
+
+  loki:
+    container_name: "shopping-loki-demo"
+    image: "grafana/loki:3.1.1"
+    ports:
+      - "3100:3100"    # Loki API
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+    volumes:
+      - "./grafana/loki/loki-config.yaml:/etc/loki/local-config.yaml"
+    networks:
+      - otel-network
+
+  grafana:
+    container_name: "shopping-grafana-demo"
+    image: "grafana/grafana-oss:11.2.0"
+    ports:
+      - "3000:3000"    # Grafana UI
+    depends_on:
+      - otel-collector
+      - jaeger
+      - zipkin
+      - prometheus
+      - loki
+    networks:
+      - otel-network
+
+networks:
+  otel-network:
+    name: "shopping-network-demo"
+    driver: bridge
+```
+
+Note that this is just a demo; none of this configuration is production-ready.
+Please consult the respective tools and technologies for information on setting
+these up in a production environment.
+
+OpenTelemetry provides an easy and non-invasive way to collect observability
+data from the application’s components. In this example we are using
+[Spring Boot](https://spring.io/projects/spring-boot) together with the
+[OpenTelemetry Spring Boot Starter project](https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/),
+as shown next
+
+```xml
+        <!-- OpenTelemetry -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-jdbc</artifactId>
+            <version>${opentelemetry.instrumentation.version}-alpha</version>
+            <scope>runtime</scope>
+        </dependency>
+```
+
+No further code changes are needed to get started with OpenTelemetry, as we are
+taking advantage of the fact that the
+[OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) will be
+running on the same machine where the demo is. In a production environment, one
+will have to configure where the OpenTelemetry collector is so that the
+component will know where to send the data together with other information.
+
+Finally, the logs of this application were turned down to `DEBUG` for
+`org.springframework.web` package to generate logs.
+
+```yml
+logging:
+  level:
+    org.springframework.web: DEBUG
+```
+
+This is not advisable for production systems as it can generate a large amount
+logs. We are setting this to `DEBUG` so that we can later on see the logs that
+the applications emit in one place.
+
 ## Preloaded data
 
 To keep things simple, we’ll use the
@@ -57,33 +210,42 @@ keys to the cart and catalogue item tables/databases, respectively.
 ## Prerequisites
 
 - [Oracle Java 21](https://www.oracle.com/java/technologies/downloads/#java21)
-- Container runtime, such as [Colima](https://github.com/abiosoft/colima)
-- [Jaeger](https://www.jaegertracing.io/), that can be started using docker
-
-  ```shell
-  # Start Jaeger
-  docker run \
-    --rm \
-    --detach \
-    --publish 4317:4317 \
-    --publish 4318:4318 \
-    --publish 9411:9411 \
-    --publish 16686:16686 \
-    --env COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-    --name 'shopping-jaeger-demo' \
-    'jaegertracing/all-in-one:1.60.0'
-
-  # Wait for Jaeger to start
-  while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:16686/search')" -ne '200' ]
-  do
-    echo 'Waiting for Jaeger to start'
-    sleep 1
-  done
-  ```
+  to build and run the application
+- Container runtime, such as [Colima](https://github.com/abiosoft/colima), with
+  [docker compose](https://docs.docker.com/compose/) support to start the
+  observability stack
 
 ## Run the example
 
-1. **Build all application**
+1. **Start the observability stack**
+
+   This example uses various technologies and tools to demonstrate how to
+   holistically view a distributed application comprising multiple components.
+   Metrics, traces, and logs are collected from all components by the
+   OpenTelemetry Collector and then accessed by several other tools, as shown
+   below.
+
+   ![OpenTelemetry Architecture](./assets/images/OpenTelemetry%20Architecture.png)
+
+   Note that this is just a demo; none of this configuration is
+   production-ready. Please consult the respective tools and technologies for
+   information on setting these up in a production environment.
+
+   Start the observability stack
+
+   ```shell
+   # Start the observability stack
+   docker-compose --file 'containers/docker-compose.yml' up --detach
+
+   # Wait for Grafana to start
+   while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:3000/login')" -ne '200' ]
+   do
+     echo 'Waiting for the observability stack to start'
+     sleep 1
+   done
+   ```
+
+2. **Build all application**
 
    This builds both projects, runs the respective tests and then copies the fat
    JAR files into the [`./.demo` directory](./.demo).
@@ -111,7 +273,7 @@ keys to the cart and catalogue item tables/databases, respectively.
    1 directory, 2 files
    ```
 
-2. **Run the application**
+3. **Run the application**
 
    The _Cart_ component depends on the _Catalogue_, thus it is recommended to
    start the _Catalogue_ component first and then start the _Cart_ component.
@@ -122,33 +284,33 @@ keys to the cart and catalogue item tables/databases, respectively.
    The components are started in the background for convenience, and can be
    started in different terminal sessions if preferred.
 
-   Run the _Catalogue_ component (in the background).
+   1. Run the _Catalogue_ component (in the background).
 
-   ```shell
-   # Start the application in the background
-   java -jar './.demo/demo-shopping-distributed-rest-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &
+      ```shell
+      # Start the application in the background
+      java -jar './.demo/demo-shopping-distributed-rest-catalogue-1.0.0.jar' > './.demo/output-catalogue.txt' 2>&1 &
 
-   # Wait for the application to start
-   while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8081/catalogue/item/1')" -ne '200' ]
-   do
-     echo 'Waiting for the Catalogue component to start'
-     sleep 1
-   done
-   ```
+      # Wait for the application to start
+      while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8081/catalogue/item/1')" -ne '200' ]
+      do
+        echo 'Waiting for the Catalogue component to start'
+        sleep 1
+      done
+      ```
 
-   Run the _Cart_ component (in the background).
+   2. Run the _Cart_ component (in the background).
 
-   ```shell
-   # Start the application in the background
-   java -jar './.demo/demo-shopping-distributed-rest-cart-1.0.0.jar' > './.demo/output-cart.txt' 2>&1 &
+      ```shell
+      # Start the application in the background
+      java -jar './.demo/demo-shopping-distributed-rest-cart-1.0.0.jar' > './.demo/output-cart.txt' 2>&1 &
 
-   # Wait for the application to start
-   while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8082/cart/1')" -ne '200' ]
-   do
-     echo 'Waiting for the Cart component to start'
-     sleep 1
-   done
-   ```
+      # Wait for the application to start
+      while [ "$(curl --silent --output /dev/null --write-out '%{http_code}' 'http://localhost:8082/cart/1')" -ne '200' ]
+      do
+        echo 'Waiting for the Cart component to start'
+        sleep 1
+      done
+      ```
 
    Note that both components are running on different ports. Also, the _Cart_
    component is expecting the _Catalogue_ component to be listening on part
@@ -159,7 +321,7 @@ keys to the cart and catalogue item tables/databases, respectively.
    | _Catalogue_ | `8081` |
    | _Cart_      | `8082` |
 
-3. **Try the application**
+4. **Try the application**
 
    1. **Request a catalogue item**
 
@@ -347,7 +509,165 @@ keys to the cart and catalogue item tables/databases, respectively.
       }
       ```
 
-4. **Stop the application once ready**
+5. **Analyse the collected metrics, traces and logs**
+
+   In this section we will go through all the tools and see how to use them to
+   analyse a distributed application as a whole.
+
+   1. Grafana (_Metrics_, _Traces_, and _Logs_)
+
+      1. [Log into Grafana (http://localhost:3000/login)](http://localhost:3000/login)
+         using the default username and password:`admin`/`admin`. You will be
+         asked to change the password, which you can keep skip or retype `admin`
+         (or any password you prefer).
+
+         ![Log into Grafana](./assets/images/Grafana%20-%20Login.png)
+
+      2. [Add a new connection (http://localhost:3000/connections/add-new-connection)](http://localhost:3000/connections/add-new-connection),
+         from _Menu_ > _Connections_ > _Add new connection_, that gets the logs
+         from both applications. Search for “Loki”
+
+         ![Add new connection - Search for Loki](./assets/images/Grafana%20-%20Add%20new%20connection%20-%20Search%20for%20Loki.png)
+
+         Click on the
+         [Loki option](http://localhost:3000/connections/datasources/loki), and
+         then click on the _Add new data source_ button.
+
+         Provide the following connection url: `http://loki:3100`
+
+         ![Add new connection - Loki](./assets/images/Grafana%20-%20Add%20new%20connection%20-%20Loki.png)
+
+         Leave everything else as is, scroll to the bottom of the page and click
+         _Save & test_. This should succeed as shown next.
+
+         ![Add new connection - Loki - Save and test](./assets/images/Grafana%20-%20Add%20new%20connection%20-%20Loki%20-%20Save%20and%20test.png)
+
+      3. [Explore the logs (http://localhost:3000/explore)](http://localhost:3000/explore),
+         and switch the source to loki.
+
+         ![Switch to Loki](./assets/images/Grafana%20-%20Explore%20-%20Switch%20to%20Loki.png)
+
+      4. View the application logs. Add a label filter (`service_name = Cart`)
+         and re-run the logs
+
+         ![Cart logs](./assets/images/Grafana%20-%20Explore%20-%20Cart%20logs.png)
+
+         Scroll down to the logs and analyse these
+
+         ![Cart logs](./assets/images/Grafana%20-%20Explore%20-%20Expand%20Cart%20logs.png)
+
+         Note that we have adjusted the log levels for both components to
+         `DEBUG` and that’s why we are seeing som many log entries
+
+      5. Filter by trace id. Each request made will have a unique trace id that
+         stays with it across components until the request is fully completed.
+         In this example, we will use the `a7c4138d6a4877a97f0debd89098977d`.
+         Change query such that it includes all service and only shows the logs
+         for the given trace id.
+
+         ```
+         {service_name=~".+"} | trace_id = `a7c4138d6a4877a97f0debd89098977d` |~ ``
+         ```
+
+         ![Filter logs by trace id](./assets/images/Grafana%20-%20Explore%20-%20Filter%20logs%20by%20trace%20id.png)
+
+         Scroll down to view the logs that belong to the given trace id
+
+         ![The logs that belong to trace id](./assets/images/Grafana%20-%20Explore%20-%20The%20logs%20that%20belong%20to%20trace%20id.png)
+
+      Grafana can be used to view all the metrics, traces and logs but adding
+      new data sources, such as
+      [Prometheus](http://localhost:3000/connections/datasources/prometheus),
+      [Jaeger](http://localhost:3000/connections/datasources/jaeger), and
+      [Zipkin](http://localhost:3000/connections/datasources/zipkin), in a
+      similar way we added the loki data source.
+
+      ![Data sources](./assets/images/Grafana%20-%20Data%20sources.png)
+
+      Note that Grafana can also collect the data directly from the
+      OpenTelemetry collector and we don’t need to have Prometheus, Jaeger, and
+      Zipkin
+
+   2. Prometheus (_Metrics_)
+
+      1. [Access Prometheus (http://localhost:9090/)](http://localhost:9090/).
+         In our configuration, no credentials are needed. Needless to say that
+         this is not the way one should configure this is a production
+         environment. Please refer to the
+         [Prometheus security model](https://prometheus.io/docs/operating/security/)
+         for more information about how to secure Prometheus.
+
+         ![Prometheus Landing page](./assets/images/Prometheus%20-%20Landing%20Page.png)
+
+      2. Filter the metrics that you like to view. In this following example, we
+         will use the `http_client_request_duration_seconds_sum`, but any metric
+         will do.
+
+         ![Filter metrics](./assets/images/Prometheus%20-%20Add%20metrics.png)
+
+   3. Jaeger (_Traces_)
+
+      1. [Access Jaeger (http://localhost:16686/search)](http://localhost:16686/search).
+         In our configuration, no credentials are needed. Needless to say that
+         this is not the way one should configure this is a production
+         environment. Please refer to the
+         [Securing Jaeger Installation](https://www.jaegertracing.io/docs/1.61/security/)
+         for more information about how to secure Jaeger.
+
+         ![Jaeger Landing page](./assets/images/Jaeger%20-%20Landing%20Page.png)
+
+      2. Select the _Cart_ service from the _Service_ dropdown option, and click
+         the _Find Traces_ button.
+
+         ![Select the Cart service](./assets/images/Jaeger%20-%20Select%20the%20Cart%20service.png)
+
+      3. Pick one of the traces and click on it to expand it.
+
+         ![Analyse trace](./assets/images/Jaeger%20-%20Analyse%20trace.png)
+
+      4. View the
+         [System Architecture tab (http://localhost:16686/dependencies)](http://localhost:16686/dependencies)
+
+         ![System Architecture](./assets/images/Jaeger%20-%20System%20Architecture.png)
+
+         This will show you a view of how the application communicates. By
+         looking at this view, you can have a good overview of all system
+         components (that are exporting traces) and who is communicating with
+         whom.
+
+   4. Zipkin (_Traces_)
+
+      1. [Access Zipkin (http://localhost:9411/zipkin/)](http://localhost:9411/zipkin/).
+         In our configuration, no credentials are needed. Needless to say that
+         this is not the way one should configure this is a production
+         environment. Unfortunately, there is
+         [no built-in authentication in the UI](https://zipkin.io/pages/architecture.html)
+
+         ![Zipkin Landing page](./assets/images/Zipkin%20-%20Landing%20Page.png)
+
+      2. Click on the gear wheel and adjust the time frame, and then click on the _RUN QUERY_ button.
+
+         ![Adjust time frame](./assets/images/Zipkin%20-%20Adjust%20time%20frame.png)
+
+      3. Pick one of the traces and click on the respective _SHOW_ button to expand it.
+
+         ![Analyse trace](./assets/images/Zipkin%20-%20Analyse%20trace.png)
+
+      4. View the
+         [Dependencies tab (http://localhost:9411/zipkin/dependency)](http://localhost:9411/zipkin/dependency)
+
+         ![Dependencies](./assets/images/Zipkin%20-%20Dependencies.png)
+
+         This will show you a view of how the application communicates. By
+         looking at this view, you can have a good overview of all system
+         components (that are exporting traces) and who is communicating with
+         whom.
+
+   This was just a brief overview of how we can use the data that the various
+   components of the application send in a holistic way to help identifying
+   issues and pin point their source.
+
+6. **Stop the application once ready**
 
    Stop both the _Cart_ and the _Catalogue_ components in the reverse order in
    which these were started. Like that the _Cart_ component does not fail as
@@ -358,10 +678,9 @@ keys to the cart and catalogue item tables/databases, respectively.
    kill "$(jcmd | grep 'demo-shopping-distributed-rest-catalogue-1.0.0.jar' | cut -d' ' -f1)"
    ```
 
-## Clean up
-
-1. **Stop Jaeger Once Ready**
+7. **Stop the observability stack once ready**
 
    ```shell
-   docker stop 'shopping-jaeger-demo'
+   docker-compose --file 'containers/docker-compose.yml' down
    ```
+
