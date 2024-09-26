@@ -8,7 +8,7 @@ deployed as a separate Java application:
 - Cart (Shopping Cart)
 
 The _Cart_ component depends on information available in the _Catalogue_
-component, such as the catalogue item’s _id_ and _caption_. These components are
+component, such as the catalogue item's _id_ and _caption_. These components are
 connected through a synchronous REST API, making the _Cart_ component dependent
 on the _Catalogue_. As a result, the _Cart_ component cannot function
 independently, and both components are required for the _Cart_ component to
@@ -186,7 +186,7 @@ the applications can be observed in one place.
 
 ## Preloaded data
 
-To keep things simple, we’ll use the
+To keep things simple, we are using an
 [H2](https://www.h2database.com/html/main.html) in-memory database preloaded
 with the following data:
 
@@ -218,34 +218,33 @@ with the following data:
   |         2 |         3 |          6 |
   |         3 |         4 |          4 |
 
-The `cart_id` and `item_id` in the cart items table are (not enforced) foreign
+The `cart_id` and `item_id` in the cart items table are not enforced foreign
 keys to the cart and catalogue item tables/databases, respectively.
 
 ## Prerequisites
 
 - [Oracle Java 21](https://www.oracle.com/java/technologies/downloads/#java21)
-  to build and run the application
-- Container runtime, such as [Colima](https://github.com/abiosoft/colima), with
-  [docker compose](https://docs.docker.com/compose/) support to start the
-  observability stack
+  is required to build and run the application
+- A container runtime, such as [Colima](https://github.com/abiosoft/colima),
+  with [Docker Compose](https://docs.docker.com/compose/) support to start the
+  observability stack.
 
 ## Run the example
 
 1. **Start the observability stack**
 
-   This example uses various technologies and tools to demonstrate how to
-   holistically view a distributed application comprising multiple components.
-   Metrics, traces, and logs are collected from all components by the
-   OpenTelemetry Collector and then accessed by several other tools, as shown
-   below.
+   This demo uses various tools and technologies to provide a holistic view of a
+   distributed application composed of multiple components. Metrics, traces, and
+   logs are collected from all components by the OpenTelemetry Collector and
+   accessed via several tools, as shown below:
 
    ![OpenTelemetry Architecture](./assets/images/OpenTelemetry%20Architecture.png)
 
    Note that this is just a demo; **none of this configuration is
-   production-ready**. Please consult the respective tools and technologies for
+   production-ready**. Please refer to the respective tools and technologies for
    information on setting these up in a production environment.
 
-   Start the observability stack
+   Start the observability stack:
 
    ```shell
    # Start the observability stack
@@ -259,7 +258,7 @@ keys to the cart and catalogue item tables/databases, respectively.
    done
    ```
 
-   (_Optional_) Access each service
+   (_Optional_) Access each service:
 
    | Category | Name                                          | URL                                               |
    | -------- | --------------------------------------------- | ------------------------------------------------- |
@@ -269,10 +268,10 @@ keys to the cart and catalogue item tables/databases, respectively.
    | Logs     | [Grafana Loki](https://grafana.com/oss/loki/) | Cannot access this directly. Use Grafana instead. |
    | All      | [Grafana](https://grafana.com/)               | [http://localhost:3000](http://localhost:3000)    |
 
-2. **Build all application**
+2. **Build all Application**
 
-   This builds both projects, runs the respective tests and then copies the fat
-   JAR files into the [`./.demo` directory](./.demo).
+   This step builds both projects, runs the tests, and copies the fat JAR files
+   into the [`./.demo` directory](./.demo).
 
    ```shell
    rm -rf './.demo'
@@ -281,7 +280,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
    All tests should pass.
 
-   (_Optional_) Verify that the fat JAR files were all created and copied.
+   (Optional) Verify that the fat JAR files were created and copied:
 
    ```shell
    tree --charset=ascii --dirsfirst --sort=name -L 1 --prune './.demo'
@@ -297,18 +296,18 @@ keys to the cart and catalogue item tables/databases, respectively.
    1 directory, 2 files
    ```
 
-3. **Run the application**
+3. **Run the Application**
 
-   The _Cart_ component depends on the _Catalogue_, thus it is recommended to
-   start the _Catalogue_ component first and then start the _Cart_ component.
-   While the _Cart_ component starts without the _Catalogue_ component, it will
-   fail once a request is made as it depends on the _Catalogue_ component to be
-   up and running.
+   The _Cart_ component depends on the _Catalogue_ component, so it’s
+   recommended to start the _Catalogue_ component first. Starting the _Cart_
+   component without the _Catalogue_ component will result in failure once a
+   request is made, as the _Cart_ component relies on the _Catalogue_ to be up
+   and running.
 
-   The components are started in the background for convenience, and can be
-   started in different terminal sessions if preferred.
+   Both components are started in the background for convenience, but you can
+   also run them in different terminal sessions if you prefer.
 
-   1. Run the _Catalogue_ component (in the background).
+   1. **Run the _Catalogue_ component in the background**:
 
       ```shell
       # Start the application in the background
@@ -322,7 +321,7 @@ keys to the cart and catalogue item tables/databases, respectively.
       done
       ```
 
-   2. Run the _Cart_ component (in the background).
+   2. **Run the _Cart_ component in the background**:
 
       ```shell
       # Start the application in the background
@@ -336,19 +335,18 @@ keys to the cart and catalogue item tables/databases, respectively.
       done
       ```
 
-   Note that both components are running on different ports. Also, the _Cart_
-   component is expecting the _Catalogue_ component to be listening on part
-   `8081`.
+   Note that both components are running on different ports, and the _Cart_
+   component expects the _Catalogue_ to be listening on port `8081`.
 
    | Component   |   Port |
    | ----------- | -----: |
    | _Catalogue_ | `8081` |
    | _Cart_      | `8082` |
 
-4. **Try the application**
+4. **Try the Application**
 
-   By trying the application, we will generate metrics, traces and logs which
-   can then be observed through the observability tools.
+   By interacting with the application, you will generate metrics, traces, and
+   logs that can be observed through the observability tools.
 
    1. **Request a catalogue item**
 
@@ -541,7 +539,7 @@ keys to the cart and catalogue item tables/databases, respectively.
    In this section we will go through all the tools and see how to use them to
    analyse a distributed application as a whole.
 
-   1. Prometheus (_Metrics_)
+   1. **Prometheus (_Metrics_)**
 
       1. [Access Prometheus (http://localhost:9090/)](http://localhost:9090/).
          In our configuration, no credentials are needed. Needless to say that
@@ -558,7 +556,7 @@ keys to the cart and catalogue item tables/databases, respectively.
 
          ![Filter metrics](./assets/images/Prometheus%20-%20Add%20metrics.png)
 
-   2. Jaeger (_Traces_)
+   2. **Jaeger (_Traces_)**
 
       1. [Access Jaeger (http://localhost:16686/search)](http://localhost:16686/search).
          In our configuration, no credentials are needed. Needless to say that
@@ -588,7 +586,7 @@ keys to the cart and catalogue item tables/databases, respectively.
          components (that are exporting traces) and who is communicating with
          whom.
 
-   3. Zipkin (_Traces_)
+   3. **Zipkin (_Traces_)**
 
       1. [Access Zipkin (http://localhost:9411/zipkin/)](http://localhost:9411/zipkin/).
          In our configuration, no credentials are needed. Needless to say that
@@ -616,7 +614,7 @@ keys to the cart and catalogue item tables/databases, respectively.
          components (that are exporting traces) and who is communicating with
          whom.
 
-   4. Grafana (_Metrics_, _Traces_, and _Logs_)
+   4. **Grafana (_Metrics_, _Traces_, and _Logs_)**
 
       1. [Log into Grafana (http://localhost:3000/login)](http://localhost:3000/login)
          using the default username and password:`admin`/`admin`. You will be
