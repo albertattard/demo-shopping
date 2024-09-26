@@ -26,7 +26,7 @@ captured from all applications and collected into one place, the OpenTelemetry
 Collector. We can use various tools to observe some or all the data, such as
 
 | Category | Name                                          | URL                                               |
-| -------- | --------------------------------------------- | ------------------------------------------------  |
+| -------- | --------------------------------------------- | ------------------------------------------------- |
 | Traces   | [Jaeger](https://www.jaegertracing.io/)       | [http://localhost:16686](http://localhost:16686)  |
 | Traces   | [Zipkin](https://zipkin.io/)                  | [http://localhost:9411](http://localhost:9411)    |
 | Metrics  | [Prometheus](https://prometheus.io/)          | [http://localhost:9090](http://localhost:9090)    |
@@ -92,6 +92,7 @@ services:
       - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
       - "9090:9090"    # Prometheus UI
+      - "8889"
     networks:
       - otel-network
 
@@ -126,9 +127,9 @@ networks:
     driver: bridge
 ```
 
-Note that this is just a demo; none of this configuration is production-ready.
-Please consult the respective tools and technologies for information on setting
-these up in a production environment.
+Note that this is just a demo; **none of this configuration is 
+production-ready**. Please consult the respective tools and technologies for 
+information on setting these up in a production environment.
 
 OpenTelemetry provides an easy and non-invasive way to collect observability
 data from the application’s components. In this example we are using
@@ -148,6 +149,19 @@ as shown next
             <version>${opentelemetry.instrumentation.version}-alpha</version>
             <scope>runtime</scope>
         </dependency>
+```
+
+In order to take full advantage from the `opentelemetry-jdbc`, we must use the
+OpenTelemetry JDBC driver
+(`io.opentelemetry.instrumentation.jdbc.OpenTelemetryDriver`) and connection URL
+(`jdbc:otel:h2:mem:demo-catalogue;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL`) 
+as shown below.
+
+```yml
+  datasource:
+    hikari:
+      driver-class-name: 'io.opentelemetry.instrumentation.jdbc.OpenTelemetryDriver'
+      jdbc-url: 'jdbc:otel:h2:mem:demo-catalogue;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL'
 ```
 
 No further code changes are needed to get started with OpenTelemetry, as we are
@@ -227,8 +241,8 @@ keys to the cart and catalogue item tables/databases, respectively.
 
    ![OpenTelemetry Architecture](./assets/images/OpenTelemetry%20Architecture.png)
 
-   Note that this is just a demo; none of this configuration is
-   production-ready. Please consult the respective tools and technologies for
+   Note that this is just a demo; **none of this configuration is
+   production-ready**. Please consult the respective tools and technologies for
    information on setting these up in a production environment.
 
    Start the observability stack
@@ -244,6 +258,16 @@ keys to the cart and catalogue item tables/databases, respectively.
      sleep 1
    done
    ```
+
+   (_Optional_) Access each service
+
+   | Category | Name                                          | URL                                               |
+   | -------- | --------------------------------------------- | ------------------------------------------------- |
+   | Traces   | [Jaeger](https://www.jaegertracing.io/)       | [http://localhost:16686](http://localhost:16686)  |
+   | Traces   | [Zipkin](https://zipkin.io/)                  | [http://localhost:9411](http://localhost:9411)    |
+   | Metrics  | [Prometheus](https://prometheus.io/)          | [http://localhost:9090](http://localhost:9090)    |
+   | Logs     | [Grafana Loki](https://grafana.com/oss/loki/) | Cannot access this directly. Use Grafana instead. |
+   | All      | [Grafana](https://grafana.com/)               | [http://localhost:3000](http://localhost:3000)    |
 
 2. **Build all application**
 
@@ -322,6 +346,9 @@ keys to the cart and catalogue item tables/databases, respectively.
    | _Cart_      | `8082` |
 
 4. **Try the application**
+
+   By trying the application, we will generate metrics, traces and logs which 
+   can then be observed through the observability tools.
 
    1. **Request a catalogue item**
 
@@ -514,7 +541,82 @@ keys to the cart and catalogue item tables/databases, respectively.
    In this section we will go through all the tools and see how to use them to
    analyse a distributed application as a whole.
 
-   1. Grafana (_Metrics_, _Traces_, and _Logs_)
+   1. Prometheus (_Metrics_)
+
+      1. [Access Prometheus (http://localhost:9090/)](http://localhost:9090/).
+         In our configuration, no credentials are needed. Needless to say that
+         this is not the way one should configure this is a production
+         environment. Please refer to the
+         [Prometheus security model](https://prometheus.io/docs/operating/security/)
+         for more information about how to secure Prometheus.
+
+         ![Prometheus Landing page](./assets/images/Prometheus%20-%20Landing%20Page.png)
+
+      2. Filter the metrics that you like to view. In this following example, we
+         will use the `http_client_request_duration_seconds_sum`, but any metric
+         will do.
+
+         ![Filter metrics](./assets/images/Prometheus%20-%20Add%20metrics.png)
+
+   2. Jaeger (_Traces_)
+
+      1. [Access Jaeger (http://localhost:16686/search)](http://localhost:16686/search).
+         In our configuration, no credentials are needed. Needless to say that
+         this is not the way one should configure this is a production
+         environment. Please refer to the
+         [Securing Jaeger Installation](https://www.jaegertracing.io/docs/1.61/security/)
+         for more information about how to secure Jaeger.
+
+         ![Jaeger Landing page](./assets/images/Jaeger%20-%20Landing%20Page.png)
+
+      2. Select the _Cart_ service from the _Service_ dropdown option, and click
+         the _Find Traces_ button.
+
+         ![Select the Cart service](./assets/images/Jaeger%20-%20Select%20the%20Cart%20service.png)
+
+      3. Pick one of the traces and click on it to expand it.
+
+         ![Analyse trace](./assets/images/Jaeger%20-%20Analyse%20trace.png)
+
+      4. View the
+         [System Architecture tab (http://localhost:16686/dependencies)](http://localhost:16686/dependencies)
+
+         ![System Architecture](./assets/images/Jaeger%20-%20System%20Architecture.png)
+
+         This will show you a view of how the application communicates. By
+         looking at this view, you can have a good overview of all system
+         components (that are exporting traces) and who is communicating with
+         whom.
+
+   3. Zipkin (_Traces_)
+
+      1. [Access Zipkin (http://localhost:9411/zipkin/)](http://localhost:9411/zipkin/).
+         In our configuration, no credentials are needed. Needless to say that
+         this is not the way one should configure this is a production
+         environment. Unfortunately, there is
+         [no built-in authentication in the UI](https://zipkin.io/pages/architecture.html)
+
+         ![Zipkin Landing page](./assets/images/Zipkin%20-%20Landing%20Page.png)
+
+      2. Click on the gear wheel and adjust the time frame, and then click on the _RUN QUERY_ button.
+
+         ![Adjust time frame](./assets/images/Zipkin%20-%20Adjust%20time%20frame.png)
+
+      3. Pick one of the traces and click on the respective _SHOW_ button to expand it.
+
+         ![Analyse trace](./assets/images/Zipkin%20-%20Analyse%20trace.png)
+
+      4. View the
+         [Dependencies tab (http://localhost:9411/zipkin/dependency)](http://localhost:9411/zipkin/dependency)
+
+         ![Dependencies](./assets/images/Zipkin%20-%20Dependencies.png)
+
+         This will show you a view of how the application communicates. By
+         looking at this view, you can have a good overview of all system
+         components (that are exporting traces) and who is communicating with
+         whom.
+
+   4. Grafana (_Metrics_, _Traces_, and _Logs_)
 
       1. [Log into Grafana (http://localhost:3000/login)](http://localhost:3000/login)
          using the default username and password:`admin`/`admin`. You will be
@@ -582,90 +684,26 @@ keys to the cart and catalogue item tables/databases, respectively.
       [Zipkin](http://localhost:3000/connections/datasources/zipkin), in a
       similar way we added the loki data source.
 
+      | Data Source | Connection URL           |
+      | ----------- | ------------------------ |
+      | Prometheus  | `http://prometheus:9090` |
+      | Jaeger      | `http://jaeger:16686`    |
+      | Zipkin      | `http://zipkin:9411`     |
+
       ![Data sources](./assets/images/Grafana%20-%20Data%20sources.png)
 
+      In the following example, Grafana is used to view the logs and traces
+      together.
+
+      ![Grafana - Explore - Logs and Traces.png](./assets/images/Grafana%20-%20Explore%20-%20Logs%20and%20Traces.png)
+
       Note that Grafana can also collect the data directly from the
-      OpenTelemetry collector and we don’t need to have Prometheus, Jaeger, and
+      OpenTelemetry collector, and we don’t need to have Prometheus, Jaeger, and
       Zipkin
-
-   2. Prometheus (_Metrics_)
-
-      1. [Access Prometheus (http://localhost:9090/)](http://localhost:9090/).
-         In our configuration, no credentials are needed. Needless to say that
-         this is not the way one should configure this is a production
-         environment. Please refer to the
-         [Prometheus security model](https://prometheus.io/docs/operating/security/)
-         for more information about how to secure Prometheus.
-
-         ![Prometheus Landing page](./assets/images/Prometheus%20-%20Landing%20Page.png)
-
-      2. Filter the metrics that you like to view. In this following example, we
-         will use the `http_client_request_duration_seconds_sum`, but any metric
-         will do.
-
-         ![Filter metrics](./assets/images/Prometheus%20-%20Add%20metrics.png)
-
-   3. Jaeger (_Traces_)
-
-      1. [Access Jaeger (http://localhost:16686/search)](http://localhost:16686/search).
-         In our configuration, no credentials are needed. Needless to say that
-         this is not the way one should configure this is a production
-         environment. Please refer to the
-         [Securing Jaeger Installation](https://www.jaegertracing.io/docs/1.61/security/)
-         for more information about how to secure Jaeger.
-
-         ![Jaeger Landing page](./assets/images/Jaeger%20-%20Landing%20Page.png)
-
-      2. Select the _Cart_ service from the _Service_ dropdown option, and click
-         the _Find Traces_ button.
-
-         ![Select the Cart service](./assets/images/Jaeger%20-%20Select%20the%20Cart%20service.png)
-
-      3. Pick one of the traces and click on it to expand it.
-
-         ![Analyse trace](./assets/images/Jaeger%20-%20Analyse%20trace.png)
-
-      4. View the
-         [System Architecture tab (http://localhost:16686/dependencies)](http://localhost:16686/dependencies)
-
-         ![System Architecture](./assets/images/Jaeger%20-%20System%20Architecture.png)
-
-         This will show you a view of how the application communicates. By
-         looking at this view, you can have a good overview of all system
-         components (that are exporting traces) and who is communicating with
-         whom.
-
-   4. Zipkin (_Traces_)
-
-      1. [Access Zipkin (http://localhost:9411/zipkin/)](http://localhost:9411/zipkin/).
-         In our configuration, no credentials are needed. Needless to say that
-         this is not the way one should configure this is a production
-         environment. Unfortunately, there is
-         [no built-in authentication in the UI](https://zipkin.io/pages/architecture.html)
-
-         ![Zipkin Landing page](./assets/images/Zipkin%20-%20Landing%20Page.png)
-
-      2. Click on the gear wheel and adjust the time frame, and then click on the _RUN QUERY_ button.
-
-         ![Adjust time frame](./assets/images/Zipkin%20-%20Adjust%20time%20frame.png)
-
-      3. Pick one of the traces and click on the respective _SHOW_ button to expand it.
-
-         ![Analyse trace](./assets/images/Zipkin%20-%20Analyse%20trace.png)
-
-      4. View the
-         [Dependencies tab (http://localhost:9411/zipkin/dependency)](http://localhost:9411/zipkin/dependency)
-
-         ![Dependencies](./assets/images/Zipkin%20-%20Dependencies.png)
-
-         This will show you a view of how the application communicates. By
-         looking at this view, you can have a good overview of all system
-         components (that are exporting traces) and who is communicating with
-         whom.
 
    This was just a brief overview of how we can use the data that the various
    components of the application send in a holistic way to help identifying
-   issues and pin point their source.
+   issues and pinpoint their source.
 
 6. **Stop the application once ready**
 

@@ -21,9 +21,9 @@ extensions:
     endpoint: :55679
 
 exporters:
-# Use this for debugging
-#  logging:
-#    verbosity: detailed
+  # Use this for debugging
+  #  logging:
+  #    verbosity: detailed
 
   otlp/jaeger:
     endpoint: "jaeger:4317"
@@ -36,8 +36,6 @@ exporters:
 
   prometheus:
     endpoint: "0.0.0.0:8889"
-    const_labels:
-      demo: "Shopping"
 
   otlphttp/loki:
     endpoint: "http://loki:3100/otlp"

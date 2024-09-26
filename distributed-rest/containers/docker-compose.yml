@@ -49,6 +49,7 @@ services:
       - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
       - "9090:9090"    # Prometheus UI
+      - "8889"
     networks:
       - otel-network
 
