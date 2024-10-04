@@ -68,9 +68,10 @@ public class CatalogueItemEntity implements Serializable {
     @Override
     public boolean equals(final Object object) {
         return object instanceof final CatalogueItemEntity other
-                && Objects.equals(id, other.id)
-                && Objects.equals(caption, other.caption)
-                && Objects.equals(description, other.description);
+               && getClass() == other.getClass()
+               && Objects.equals(id, other.id)
+               && Objects.equals(caption, other.caption)
+               && Objects.equals(description, other.description);
     }
 
     @Override

@@ -55,8 +55,9 @@ public class CartItemEntityPrimaryKey implements Serializable {
     @Override
     public boolean equals(final Object object) {
         return object instanceof final CartItemEntityPrimaryKey other
-                && Objects.equals(cartId(), other.cartId())
-                && Objects.equals(itemId(), other.itemId());
+               && getClass() == other.getClass()
+               && Objects.equals(cartId(), other.cartId())
+               && Objects.equals(itemId(), other.itemId());
     }
 
     @Override
