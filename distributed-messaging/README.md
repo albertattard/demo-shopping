@@ -67,6 +67,9 @@ keys to the cart and catalogue item tables/databases, respectively.
    The `CatalogueItemMessageHandlerTest` test class require a running RabbitMq
    instance.
 
+   > TODO: Use test containers or other means so that the tests do not depend on
+   > external resources to be available.
+
    ```shell
    # Start RabbitMq
    docker run \

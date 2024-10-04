@@ -719,4 +719,3 @@ keys to the cart and catalogue item tables/databases, respectively.
    ```shell
    docker-compose --file 'containers/docker-compose.yml' down
    ```
-
