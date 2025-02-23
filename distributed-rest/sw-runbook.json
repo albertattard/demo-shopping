@@ -78,7 +78,7 @@
     {
       "type": "DisplayFile",
       "path": "./catalogue/pom.xml",
-      "from_line": 68,
+      "from_line": 60,
       "number_of_lines": 11
     },
     {
