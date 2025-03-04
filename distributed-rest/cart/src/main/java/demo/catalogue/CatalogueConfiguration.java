@@ -17,8 +17,8 @@ public class CatalogueConfiguration {
                 .orElse("http://localhost:8081/");
 
         return builder
-                .setConnectTimeout(Duration.ofSeconds(1))
-                .setReadTimeout(Duration.ofSeconds(1))
+                .connectTimeout(Duration.ofSeconds(1))
+                .readTimeout(Duration.ofSeconds(1))
                 .rootUri(catalogueRootUri)
                 .build();
     }
