@@ -67,7 +67,7 @@ class CatalogueItemControllerTest {
 
             final String location = response.getHeaders().getLocation().getPath();
             assertThat(location)
-                    .matches(Pattern.compile("/catalogue/item/\\d"));
+                    .matches(Pattern.compile("/catalogue/item/\\d+"));
 
             return Long.parseLong(location.substring(16));
         }
